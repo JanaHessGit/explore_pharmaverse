@@ -1,5 +1,8 @@
-# Uncomment line below if you need to install these packages
-# install.packages(c("dplyr", "lubridate", "stringr", "tibble", "pharmaversesdtm", "admiral"))
+# admiral - ADaM dataset construction
+# metacore - Stores and validates dataset metadata (variable definitions, codelists) from specs
+# xortr - Applies SAS XPT metadata (types, labels, lengths, formats) and exports submission-ready .xpt transport files
+# rtables - Framework for building complex nested tables with flexible layouts
+
 
 library(dplyr, warn.conflicts = FALSE)
 library(lubridate)
@@ -8,6 +11,12 @@ library(tibble)
 library(pharmaversesdtm)
 library(admiral)
 library(languageserver)
+library(admiralonco)
+library(metacore)
+library(metatools)
+library(xportr)
+library(haven)
+
 
 # Read in SDTM datasets
 dm <- pharmaversesdtm::dm
@@ -172,5 +181,21 @@ cmp <- adsl %>%
 all(cmp$matches)
   
   
-  
-   #TODO:Higher Order Functions 
+
+# understand idea of metacore
+
+load(metacore_example("pilot_ADaM.rda"))
+metacore
+metacore <- metacore %>% select_dataset("ADSL")
+ds_list <- list(DM = read_xpt(metatools_example("dm.xpt")))
+ds_list
+lapply(ds_list$DM, attr, which = "label")
+
+# Pull in columns from DM to be in ADSL
+adsl <- build_from_derived(metacore, ds_list, predecessor_only = FALSE)  
+
+# Now we can make some new columns and converting columns into factors
+adsl %>%
+   select(USUBJID, AGE, ETHNIC) %>% 
+   create_cat_var(metacore, AGE, AGEGR1, AGEGR1N) %>% #Add an AGEGR1 and AGEGR1N column
+   convert_var_to_fct(metacore, ETHNIC) # Change ETHNIC to as factor 
