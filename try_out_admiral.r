@@ -90,7 +90,7 @@ adcm1 <- data.frame(STUDYID = "XXX", USUBJID = "XXX-1", CMTRT = "ASPIRIN")
 adcm1
 
 # This doesn't work as we are not unquoting the subject keys
-adcm1 %>% select(get_admiral_option("subject_keys"))
+# adcm1 %>% select(get_admiral_option("subject_keys"))
 # This works because we are unquoting the subject keys
 adcm1 %>% select(!!!get_admiral_option("subject_keys"))
 
@@ -122,4 +122,55 @@ derive_vars_merged(
 )
 
 
-  #TODO:Higher Order Functions 
+
+# Derive birth date from BRTHDTC
+adsl <- adsl %>%
+  derive_vars_dt(
+    new_vars_prefix = "BRTH",
+    dtc = BRTHDTC
+  )
+
+#decide which reference date to use
+colnames(adsl)[grepl("DTC", colnames(adsl))]
+
+any(is.na(adsl$RFSTDTC))
+any(is.na(adsl$RFXENDTCDT))
+any(is.na(adsl$RFICDTC))
+any(is.na(adsl$DMDTC))
+
+
+
+
+ adsl <- adsl %>%
+  derive_vars_dt(
+    new_vars_prefix = "DMDTC",
+    dtc = DMDTC
+  )
+  
+colnames(adsl)
+
+
+adsl <- adsl %>%
+  derive_vars_aage(
+    start_date = BRTHDT,
+    end_date = DMDTCDT
+  )
+
+
+#compare if that was the ref date used
+any(is.na(adsl$AAGE))
+
+cmp <- adsl %>%
+  transmute(
+    USUBJID,
+    AGE,
+    AAGE,
+    age_diff = AGE - AAGE,
+    matches = AGE == AAGE
+  )
+  
+all(cmp$matches)
+  
+  
+  
+   #TODO:Higher Order Functions 
